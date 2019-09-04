@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\build\\intermediates\\res\\merged\\debug\\mipmap-anydpi-v26\\ic_launcher_round.xml",
+        "source": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\src\\main\\res\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\build\\intermediates\\res\\merged\\debug\\mipmap-anydpi-v26\\ic_launcher.xml",
+        "source": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\src\\main\\res\\mipmap-anydpi-v26\\ic_launcher.xml"
+    }
+]

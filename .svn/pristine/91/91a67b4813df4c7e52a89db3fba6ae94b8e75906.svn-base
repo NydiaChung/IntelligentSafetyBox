@@ -1,0 +1,13 @@
+package com.newland.intelligentsafetybox.bean;
+
+public class DeviceInfo {
+    public static String deviceId = "9969";
+    public static String apiTagBoxDefence = "defense";
+    public static String apiTagBoxControl = "ctrl";
+    public static String apiTagBoxAlarm = "alarm";
+    public static String apiTagBoxDefenceStatus = "DefenseState";
+    public static Object openBoxValue = 1;
+    public static Object closeBoxValue = 0;
+    public static Object openDefenceValue = 1;
+    public static Object closeDefenceValue = 0;
+}

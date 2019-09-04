@@ -1,0 +1,74 @@
+package com.newland.intelligentsafetybox.view;
+
+
+import android.app.Dialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.StyleRes;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+
+import com.newland.intelligentsafetybox.Constant;
+import com.newland.intelligentsafetybox.R;
+import com.newland.intelligentsafetybox.utils.SPUtils;
+
+
+public class SetingMainDialog extends Dialog {
+    private Context context;
+    private int layoutRes;//甯冨眬鏂囦欢
+    private EditText ipAddress, port;
+    private Button btnConfirm, btnCancel;
+
+    public SetingMainDialog(@NonNull Context context) {
+        super(context);
+        this.context = context;
+    }
+
+    public SetingMainDialog(@NonNull Context context, @StyleRes int themeResId, int resLayout) {
+        super(context, themeResId);
+        this.context = context;
+        this.layoutRes = resLayout;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(layoutRes);
+        ipAddress = (EditText) findViewById(R.id.text_ipadress);
+        port = (EditText) findViewById(R.id.text_port);
+        btnConfirm = (Button) findViewById(R.id.btn_confirm);
+        btnCancel = (Button) findViewById(R.id.btn_cancel);
+        setInfo();
+
+        btnConfirm.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String ip_address = ipAddress.getText().toString().trim();
+                String port_edit = port.getText().toString().trim();
+                SPUtils.put(context, "ipAddress", ip_address);
+                SPUtils.put(context, "port", port_edit);
+                dismiss();
+            }
+        });
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismiss();
+            }
+        });
+    }
+    
+    private void setInfo() {
+		if (!"".equals(SPUtils.get(context, "ipAddress", Constant.DEFAULT_IP_ADRESS))) {
+	          String ip = (String) SPUtils.get(context, "ipAddress", Constant.DEFAULT_IP_ADRESS);
+	          ipAddress.setText(ip);
+	      }
+	      if (!"".equals(SPUtils.get(context, "port", Constant.DEFAULT_PORT))) {
+	          String port1 = (String) SPUtils.get(context, "port", Constant.DEFAULT_PORT);
+	          port.setText(port1);
+	      }
+	}
+}

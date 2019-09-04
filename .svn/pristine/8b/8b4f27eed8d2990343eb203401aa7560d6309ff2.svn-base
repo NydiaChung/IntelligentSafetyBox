@@ -1,0 +1,30 @@
+package com.newland.intelligentsafetybox.activity;
+
+import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.newland.intelligentsafetybox.R;
+import com.newland.intelligentsafetybox.base.BaseActivity;
+import com.newland.intelligentsafetybox.utils.DataCache;
+
+import cn.com.newland.nle_sdk.util.NetWorkBusiness;
+
+public class AboutActivity extends BaseActivity{
+    private static String TAG = "AboutActivity";
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_about);
+        initView();
+    }
+
+    private void initView() {
+        initHeadView();
+        setHeadVisable(true);
+        initLeftTitleView("关于我们");
+        setLeftTitleView(true);
+        setTitleViewVisable(false);
+        setRithtTitleViewVisable(false);
+    }
+}

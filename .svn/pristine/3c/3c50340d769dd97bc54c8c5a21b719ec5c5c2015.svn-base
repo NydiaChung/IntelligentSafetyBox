@@ -1,0 +1,421 @@
+package com.newland.intelligentsafetybox.activity;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.annotation.NonNull;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.newland.intelligentsafetybox.Constant;
+import com.newland.intelligentsafetybox.R;
+import com.newland.intelligentsafetybox.base.BaseActivity;
+import com.newland.intelligentsafetybox.bean.DeviceInfo;
+import com.newland.intelligentsafetybox.utils.DataCache;
+import com.newland.intelligentsafetybox.utils.LogUtil;
+import com.newland.intelligentsafetybox.utils.SPUtils;
+import com.newland.intelligentsafetybox.view.SetingMainDialog;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import cn.com.newland.nle_sdk.responseEntity.base.BaseResponseEntity;
+import cn.com.newland.nle_sdk.util.NetWorkBusiness;
+import cn.com.newland.nle_sdk.util.Tools;
+
+public class MainActivity extends BaseActivity implements View.OnClickListener {
+    private static String TAG = "MainActivity";
+    private Context mContext;
+    private TextView mBoxStatusText;
+    private TextView mBoxDefenceStatusText;
+    private TextView mBoxDefenceOpenIconText;
+    private TextView mBoxDefenceCloseIconText;
+
+    private ImageView mBoxControlImage;
+    private ImageView mBoxDefenceLine;
+    private ImageView mBoxDefenceOpenStateImage;
+    private ImageView mBoxDefenceCloseStateImage;
+    private TextView mPostResultTv;
+
+    private SetingMainDialog mSetingMainDialog;
+    private NetWorkBusiness mNetWorkBusiness;
+    private Dialog mBottomDialog;
+
+    private String mIp = "", mPort = "";
+
+    private static final int GET_BOX_STATUS = 101;
+    private static final int GET_BOX_STATUS_DELAY = 5000;
+
+    Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case GET_BOX_STATUS:
+                    querySingleSensor();
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mContext = this;
+        initView();
+        mNetWorkBusiness = new NetWorkBusiness(DataCache.getAccessToken(getApplicationContext()), DataCache.getBaseUrl(getApplicationContext()));
+        querySingleSensor();
+    }
+
+    private void initView() {
+        initHeadView();
+        setHeadVisable(true);
+        initLeftTitleView("返回");
+        setLeftTitleView(true);
+        initTitleView(this.getString(R.string.app_title));
+        setRithtTitleViewVisable(false);
+
+        mBoxStatusText = (TextView) findViewById(R.id.box_status_text);
+        mBoxDefenceStatusText = (TextView) findViewById(R.id.box_defence_status_text);
+        mBoxDefenceOpenIconText = (TextView) findViewById(R.id.box_defence_open_state_icon_text);
+        mBoxDefenceCloseIconText = (TextView) findViewById(R.id.box_defence_close_state_icon_text);
+
+        mBoxControlImage = (ImageView) findViewById(R.id.box_control_switch_image);
+        mBoxDefenceLine = (ImageView) findViewById(R.id.box_defence_line);
+        mBoxDefenceOpenStateImage = (ImageView) findViewById(R.id.box_defence_open_state_image);
+        mBoxDefenceCloseStateImage = (ImageView) findViewById(R.id.box_defence_close_state_image);
+        mBoxDefenceLine.setTag(true);
+        mPostResultTv = (TextView) findViewById(R.id.postResult);
+
+        mBoxControlImage.setOnClickListener(new OpenBoxListener());
+        mBoxDefenceLine.setOnClickListener(new DenfenceListener());
+    }
+
+    private void getInfo() {
+        if (!"".equals(SPUtils.get(this, Constant.IP_ADRESS, Constant.DEFAULT_IP_ADRESS))) {
+            mIp = (String) SPUtils.get(this, Constant.IP_ADRESS, Constant.DEFAULT_IP_ADRESS);
+        }
+        if (!"".equals(SPUtils.get(this, Constant.PORT, Constant.DEFAULT_PORT))) {
+            mPort = (String) SPUtils.get(this, Constant.PORT, Constant.DEFAULT_PORT);
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        LogUtil.d(TAG, "onClick");
+        final Gson gson = new Gson();
+        int viewId = v.getId();
+        switch (viewId) {
+            case R.id.box_control_switch_image:
+                LogUtil.d(TAG, "click box_control_switch_image");
+                mNetWorkBusiness.control(DeviceInfo.deviceId, DeviceInfo.apiTagBoxControl, DeviceInfo.openBoxValue, new retrofit2.Callback<BaseResponseEntity>() {
+                    @Override
+                    public void onResponse(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull retrofit2.Response<BaseResponseEntity> response) {
+                        BaseResponseEntity baseResponseEntity = response.body();
+
+                        if (baseResponseEntity != null) {
+                            Tools.printJson(mPostResultTv, gson.toJson(baseResponseEntity));
+                        } else {
+                            LogUtil.d(TAG, "请求出错 : 请求参数不合法或者服务出错");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull Throwable t) {
+                        LogUtil.d(TAG, "请求出错 : \n" + t.getMessage());
+                    }
+                });
+                break;
+            case R.id.box_defence_line:
+                LogUtil.d(TAG, "click box_defence_line");
+                boolean status = (boolean) mBoxDefenceLine.getTag();
+                Object value = 0;
+                if (status) {
+                    value = DeviceInfo.closeDefenceValue;
+                } else {
+                    value = DeviceInfo.openDefenceValue;
+                }
+                mNetWorkBusiness.control(DeviceInfo.deviceId, DeviceInfo.apiTagBoxDefence, value, new retrofit2.Callback<BaseResponseEntity>() {
+                    @Override
+                    public void onResponse(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull retrofit2.Response<BaseResponseEntity> response) {
+                        BaseResponseEntity baseResponseEntity = response.body();
+
+                        if (baseResponseEntity != null) {
+                            Tools.printJson(mPostResultTv, gson.toJson(baseResponseEntity));
+                        } else {
+                            LogUtil.d(TAG, "请求出错 : 请求参数不合法或者服务出错");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull Throwable t) {
+                        LogUtil.d(TAG, "请求出错 : \n" + t.getMessage());
+                    }
+                });
+                break;
+        }
+    }
+
+    class OpenBoxListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            LogUtil.d(TAG, "OpenBoxListener click");
+            if ((boolean)mBoxControlImage.getTag()) {
+                LogUtil.d(TAG, "box is open, not support close");
+                Toast.makeText(getApplicationContext(), R.string.box_control_tip_message, Toast.LENGTH_LONG);
+                return;
+            }
+            final Gson gson = new Gson();
+            mNetWorkBusiness.control(DeviceInfo.deviceId, DeviceInfo.apiTagBoxControl, DeviceInfo.openBoxValue, new retrofit2.Callback<BaseResponseEntity>() {
+                @Override
+                public void onResponse(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull retrofit2.Response<BaseResponseEntity> response) {
+                    BaseResponseEntity baseResponseEntity = response.body();
+                    LogUtil.d(TAG, "open box, gson.toJson(baseResponseEntity):" + gson.toJson(baseResponseEntity));
+
+                    if (baseResponseEntity != null) {
+                        Tools.printJson(mPostResultTv, gson.toJson(baseResponseEntity));
+                        try {
+                            JSONObject jsonObject = new JSONObject(gson.toJson(baseResponseEntity));
+                            int status = (int) jsonObject.get("Status");
+                            LogUtil.d(TAG, "Status:" + status);
+                            displayBoxStatusForControl(status);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        LogUtil.d(TAG, "请求出错 : 请求参数不合法或者服务出错");
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull Throwable t) {
+                    LogUtil.d(TAG, "请求出错 : \n" + t.getMessage());
+                }
+            });
+        }
+    }
+
+    private void displayBoxStatusForControl(int status) {
+        if (status == 0) {
+            mBoxStatusText.setText(R.string.box_status_open);
+            mBoxStatusText.setTextColor(getResources().getColor(R.color.text_blue));
+            mBoxControlImage.setBackground(getResources().getDrawable(R.mipmap.icon_safe));
+            mBoxControlImage.setTag(true);
+        }
+    }
+
+    class DenfenceListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            final Gson gson = new Gson();
+            boolean status = (boolean) mBoxDefenceLine.getTag();
+            Object value = 0;
+            if (status) {
+                value = DeviceInfo.closeDefenceValue;
+            } else {
+                value = DeviceInfo.openDefenceValue;
+            }
+            mNetWorkBusiness.control(DeviceInfo.deviceId, DeviceInfo.apiTagBoxDefence, value, new retrofit2.Callback<BaseResponseEntity>() {
+                @Override
+                public void onResponse(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull retrofit2.Response<BaseResponseEntity> response) {
+                    BaseResponseEntity baseResponseEntity = response.body();
+                    LogUtil.d(TAG, "control, gson.toJson(baseResponseEntity):" + gson.toJson(baseResponseEntity));
+
+                    if (baseResponseEntity != null) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(gson.toJson(baseResponseEntity));
+                            int status = (int) jsonObject.get("Status");
+                            LogUtil.d(TAG, "Status:" + status);
+                            dispalyDefenceStatus((boolean)mBoxDefenceLine.getTag(), status);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        Tools.printJson(mPostResultTv, gson.toJson(baseResponseEntity));
+                    } else {
+                        LogUtil.d(TAG, "请求出错 : 请求参数不合法或者服务出错");
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull Throwable t) {
+                    LogUtil.d(TAG, "请求出错 : \n" + t.getMessage());
+                }
+            });
+        }
+    }
+
+    private void dispalyDefenceStatus(boolean value, int status) {
+        if (status == 0) {
+            if (value) {
+                dispalyDefenceClose();
+            } else {
+                dispalyDefenceOpen();
+            }
+        }
+    }
+
+    private void dispalyDefenceOpen() {
+        mBoxDefenceOpenIconText.setTextColor(getResources().getColor(R.color.text_blue));
+        mBoxDefenceCloseIconText.setTextColor(getResources().getColor(R.color.text_gray));
+        mBoxDefenceOpenStateImage.setBackground(getResources().getDrawable(R.mipmap.icon_protection_blue));
+        mBoxDefenceLine.setBackground(getResources().getDrawable(R.mipmap.btn_switch_left));
+        mBoxDefenceCloseStateImage.setBackground(getResources().getDrawable(R.mipmap.icon_removal_grey));
+        mBoxDefenceStatusText.setText(R.string.box_defence_open);
+        mBoxDefenceStatusText.setTextColor(getResources().getColor(R.color.text_blue));
+        mBoxDefenceLine.setTag(true);
+    }
+
+    private void dispalyDefenceClose() {
+        mBoxDefenceOpenIconText.setTextColor(getResources().getColor(R.color.text_gray));
+        mBoxDefenceCloseIconText.setTextColor(getResources().getColor(R.color.text_light_red));
+        mBoxDefenceOpenStateImage.setBackground(getResources().getDrawable(R.mipmap.icon_protection_grey));
+        mBoxDefenceLine.setBackground(getResources().getDrawable(R.mipmap.btn_switch_right));
+        mBoxDefenceCloseStateImage.setBackground(getResources().getDrawable(R.mipmap.icon_removal_red));
+        mBoxDefenceStatusText.setText(R.string.box_defence_close);
+        mBoxDefenceStatusText.setTextColor(getResources().getColor(R.color.text_light_red));
+        mBoxDefenceLine.setTag(false);
+    }
+
+    private void querySingleSensor() {
+        LogUtil.d(TAG, "querySingleSensor");
+        final Gson gson = new Gson();
+        mNetWorkBusiness.getSensor(DeviceInfo.deviceId, DeviceInfo.apiTagBoxAlarm, new retrofit2.Callback<BaseResponseEntity>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull retrofit2.Response<BaseResponseEntity> response) {
+                BaseResponseEntity baseResponseEntity = response.body();
+                try {
+                    JSONObject jsonObject = new JSONObject(gson.toJson(baseResponseEntity));
+                    JSONObject resultObj = (JSONObject) jsonObject.get("ResultObj");
+                    double value = (double) resultObj.get("Value");
+                    LogUtil.d(TAG, "value:" + value);
+                    displayBoxStatus(Integer.valueOf((int)value));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                LogUtil.d(TAG, "gson.toJson(baseResponseEntity):" + gson.toJson(baseResponseEntity));
+                if (baseResponseEntity != null) {
+                    Tools.printJson(mPostResultTv, gson.toJson(baseResponseEntity));
+                } else {
+                    mPostResultTv.setText("请求出错 : 请求参数不合法或者服务出错");
+                }
+
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull Throwable t) {
+                mPostResultTv.setText("请求出错 : \n" + t.getMessage());
+            }
+        });
+        mNetWorkBusiness.getSensor(DeviceInfo.deviceId, DeviceInfo.apiTagBoxDefenceStatus, new retrofit2.Callback<BaseResponseEntity>() {
+            @Override
+            public void onResponse(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull retrofit2.Response<BaseResponseEntity> response) {
+                BaseResponseEntity baseResponseEntity = response.body();
+                try {
+                    JSONObject jsonObject = new JSONObject(gson.toJson(baseResponseEntity));
+                    JSONObject resultObj = (JSONObject) jsonObject.get("ResultObj");
+                    double value = (double) resultObj.get("Value");
+                    LogUtil.d(TAG, "value:" + value);
+                    int status = Integer.valueOf((int)value);
+                    if (0 == status) {
+                        dispalyDefenceClose();
+                    } else if (1 == status) {
+                        dispalyDefenceOpen();
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                if (baseResponseEntity != null) {
+                    Tools.printJson(mPostResultTv, gson.toJson(baseResponseEntity));
+                } else {
+                    mPostResultTv.setText("请求出错 : 请求参数不合法或者服务出错");
+                }
+
+            }
+
+            @Override
+            public void onFailure(@NonNull retrofit2.Call<BaseResponseEntity> call, @NonNull Throwable t) {
+                mPostResultTv.setText("请求出错 : \n" + t.getMessage());
+            }
+        });
+        mHandler.sendEmptyMessageDelayed(GET_BOX_STATUS, GET_BOX_STATUS_DELAY);
+    }
+
+    private void displayBoxStatus(int value) {
+        if (value == Constant.BOX_STATUS_CLOSE) {
+            dismissDialog();
+            mBoxStatusText.setText(R.string.box_status_close);
+            mBoxStatusText.setTextColor(getResources().getColor(R.color.text_red));
+            mBoxControlImage.setBackground(getResources().getDrawable(R.mipmap.icon_safe_lock));
+            mBoxControlImage.setTag(false);
+        } else if (value == Constant.BOX_STATUS_OPEN) {
+            dismissDialog();
+            mBoxStatusText.setText(R.string.box_status_open);
+            mBoxStatusText.setTextColor(getResources().getColor(R.color.text_blue));
+            mBoxControlImage.setBackground(getResources().getDrawable(R.mipmap.icon_safe));
+            mBoxControlImage.setTag(true);
+        } else if (value == Constant.BOX_STATUS_ALARM) {
+            displayAlarmDialog();
+        }
+    }
+
+    private void displayAlarmDialog() {
+/*        if (null != mBottomDialog) {
+            LogUtil.d(TAG, "mBottomDialog has created, return");
+            return;
+        }*/
+        mBottomDialog = new Dialog(this, R.style.bottom_dialog);
+        LinearLayout linearLayout = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.alarm_bottom_dialog, null);
+        linearLayout.findViewById(R.id.close_alarm_image).setOnClickListener(btnlistener);
+        linearLayout.findViewById(R.id.alarm_remove_btn).setOnClickListener(btnlistener);
+        mBottomDialog.setContentView(linearLayout);
+        Window dialogWindow = mBottomDialog.getWindow();
+        dialogWindow.setGravity(Gravity.BOTTOM);
+        dialogWindow.setWindowAnimations(R.style.dialogstyle);
+        WindowManager.LayoutParams lp = dialogWindow.getAttributes();
+        lp.x = 0; // 新位置X坐标
+        lp.y = -20; // 新位置Y坐标
+        lp.width = (int) getResources().getDisplayMetrics().widthPixels; // 宽度
+        linearLayout.measure(0, 0);
+        lp.height = linearLayout.getMeasuredHeight();
+        lp.alpha = 9f; // 透明度
+        dialogWindow.setAttributes(lp);
+        mBottomDialog.show();
+    }
+
+    private View.OnClickListener btnlistener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            int viewId = v.getId();
+            switch (viewId) {
+                case R.id.close_alarm_image:
+                    dismissDialog();
+                    break;
+                case R.id.alarm_remove_btn:
+                    dismissDialog();
+                    break;
+            }
+        }
+    };
+
+    private void dismissDialog() {
+        if (null != mBottomDialog) {
+            mBottomDialog.dismiss();
+        }
+    }
+}

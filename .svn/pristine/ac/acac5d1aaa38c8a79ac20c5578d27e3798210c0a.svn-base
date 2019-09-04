@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\build\\intermediates\\res\\merged\\debug\\drawable-v21\\abc_btn_colored_material.xml",
+        "source": "C:\\Users\\jy\\.gradle\\caches\\transforms-1\\files-1.1\\appcompat-v7-27.1.1.aar\\aea39e906e580c6260eb60424a491b5b\\res\\drawable-v21\\abc_btn_colored_material.xml"
+    },
+    {
+        "merged": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\build\\intermediates\\res\\merged\\debug\\drawable-v21\\abc_edit_text_material.xml",
+        "source": "C:\\Users\\jy\\.gradle\\caches\\transforms-1\\files-1.1\\appcompat-v7-27.1.1.aar\\aea39e906e580c6260eb60424a491b5b\\res\\drawable-v21\\abc_edit_text_material.xml"
+    },
+    {
+        "merged": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\build\\intermediates\\res\\merged\\debug\\drawable-v21\\notification_action_background.xml",
+        "source": "C:\\Users\\jy\\.gradle\\caches\\transforms-1\\files-1.1\\support-compat-27.1.1.aar\\0ac7216018bb3c800f714a37df99b6ec\\res\\drawable-v21\\notification_action_background.xml"
+    },
+    {
+        "merged": "D:\\company\\project\\NEWlab\\IntelligentSafetyBox\\app\\build\\intermediates\\res\\merged\\debug\\drawable-v21\\abc_action_bar_item_background_material.xml",
+        "source": "C:\\Users\\jy\\.gradle\\caches\\transforms-1\\files-1.1\\appcompat-v7-27.1.1.aar\\aea39e906e580c6260eb60424a491b5b\\res\\drawable-v21\\abc_action_bar_item_background_material.xml"
+    }
+]
